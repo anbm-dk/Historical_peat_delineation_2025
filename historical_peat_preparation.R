@@ -192,24 +192,6 @@ cov_extr_LU <- extract_tilefolders_parallel_psock(
   pts_crs = mycrs
 )
 
-# cov_extr_Ochre <- ochre_pts %>%
-#   terra:: extract(
-#     x = cov_selected,
-#     y = ., 
-#     ID = FALSE
-#     )
-# cov_extr_Jup <- Jupiter_pts %>%
-#   terra:: extract(
-#     x = cov_selected,
-#     y = ., 
-#     ID = FALSE
-#   )
-# cov_extr_LU <- LU_1700_pts %>%
-#   terra:: extract(
-#     x = cov_lu,
-#     y = ., 
-#     ID = FALSE
-#   )
 
 dem <- cov_all["^dhm"]
 
@@ -258,24 +240,6 @@ bg_extr_Jup <- extract_tilefolders_parallel_psock(
     values(bg_pts_Jup), .
   )
 
-# bg_extr_Ochre <- bg_pts_Ochre %>%
-#   terra:: extract(
-#     x = cov_selected,
-#     y = ., 
-#     ID = FALSE
-#   ) %>%
-#   bind_cols(
-#     values(bg_pts_Ochre), .
-#   )
-# bg_extr_Jup <- bg_pts_Jup %>%
-#   terra:: extract(
-#     x = cov_selected,
-#     y = ., 
-#     ID = FALSE
-#   ) %>%
-#   bind_cols(
-#     values(bg_pts_Jup), .
-#   )
 
 saveRDS(cov_extr_Ochre, paste0(dir_dat, "cov_extr_Ochre.Rds"))
 saveRDS(cov_extr_Jup,   paste0(dir_dat, "cov_extr_Jup.Rds"))
@@ -329,33 +293,6 @@ saveRDS(folds_extr_LU,    paste0(dir_dat, "folds_extr_LU.Rds"))
 saveRDS(bg_folds_Ochre,   paste0(dir_dat, "bg_folds_Ochre.Rds"))
 saveRDS(bg_folds_Jup,     paste0(dir_dat, "bg_folds_Jup.Rds"))
 
-# Models
-# Use probability random forest based on ranger
-# Use extratrees
-# covariate selection based on cummulative importance
-# Optimize for AUC
-# Save models to rds
-# Plot covariate importance for each model
-
-# Model for is_peat in Ochre pts
-# Model for is_peat in Jupiter pts
-# Model for relative sampling density for Ochre pts
-# Model for relative sampling density for Jupiter pts
-# Model for each 1700s land use class
-
-
-# Predictions
-# Use tiles
-# Drop unused covariates
-# Merge
-
-# Map for is_peat in Ochre pts
-# Map for is_peat in Jupiter pts
-# Map for relative sampling density for Ochre pts
-# Map for relative sampling density for Jupiter pts
-# Map for each 1700s land use class
-# Standardize probabilities for each 1700s land use class to a sum of 1
-# Standardize per tile, then merge.
 
 
 
