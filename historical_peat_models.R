@@ -298,58 +298,102 @@ tr_ind_LU <- make_indices_train(LU1700_data_train$fold)
 
 # Preliminary models
 
-# Jupiter model for peat
+n_cores <- 19
 
 source("optimize_ranger.R")
 
-set.seed(875982760)
+make_bounds_and_grid <- function(
+    cov_names,
+    data,
+    rows_grid,
+    seed = 1
+    ) {
+  bounds <- list(
+    mtry = c(2, length(cov_names)),  
+    sqrt_min.node.size = c(1, sqrt(nrow(data)/10)),  # NB
+    maxcor = c(0.1, 1),
+    maximp = c(0.1, 1),
+    extratrees = c(1L, 2L)
+  )
+  
+  set.seed(seed)
+  
+  grid <- lapply(
+    bounds, 
+    function(x) {
+      out = x[1] + runif(3) %>%
+        multiply_by(c(0.10, 0.5, 0.90)) %>%
+        multiply_by(x[2] - x[1])
+      return(out)
+    }
+  ) %>%
+    bind_cols() %>%
+    expand.grid() %>%
+    distinct() %>%
+    sample_n(rows_grid)
+  
+  out <- list()
+  out$bounds <- bounds
+  out$grid <- grid
+  return(out)
+}
+
+# Jupiter model for peat
+
+bounds_and_grid_i <- make_bounds_and_grid(
+    cov_names = cov_names_selected,
+    data = Jupiter_data_peat_train,
+    rows_grid = n_cores*2,
+    seed = 875982760
+)
+
+bounds_opt <- bounds_and_grid_i$bounds
+ingrid <- bounds_and_grid_i$grid
 
 model_Jupiter_peat <- optimize_ranger(
   data = Jupiter_data_peat_train,
   target = "is_peat",
   cov_names = cov_names_selected,
-  bounds_bayes = list(
-    mtry = c(2, length(cov_names_selected)),  
-    sqrt_min.node.size = c(1, sqrt(nrow(Jupiter_data_peat_train))),
-    maxcor = c(0.1, 1),
-    maximp = c(0.1, 1),
-    extratrees = c(1L, 2L)
-  ), # named list with bounds for bayesian opt.
+  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+  initgrid = ingrid,
   folds = tr_ind_Jupiter_peat, # list with indices, folds for cross validation
   sumfun = twoClassSummary, # summary function for accuracy assessment
   metric = "ROC", # character, length 1, name of evaluation metric
   max_metric = TRUE, # logical, should the evaluation metric be maximized
   classprob = TRUE, # should class probabilities be calculated
-  cores = 19, # number cores for parallelization
+  cores = n_cores, # number cores for parallelization
   seed = 875982760,  # Random seed for model training
   numtrees = 100
 )
 
 model_Jupiter_peat
 
-varImp(model_Jupiter_peat)
+varImp(model_Jupiter_peat$model)
 
 # Jupiter model for point distibutions
 
-set.seed(875982760)
+bounds_and_grid_i <- make_bounds_and_grid(
+  cov_names = cov_names_selected,
+  data = Jupiter_data_presence_train,
+  rows_grid = n_cores*2,
+  seed = 875982760
+)
+
+bounds_opt <- bounds_and_grid_i$bounds
+ingrid <- bounds_and_grid_i$grid
 
 model_Jupiter_presence <- optimize_ranger(
   data = Jupiter_data_presence_train,  # NB
   target = "sampled", # NB
   cov_names = cov_names_selected,
-  bounds_bayes = list(
-    mtry = c(2, length(cov_names_selected)),  
-    sqrt_min.node.size = c(1, sqrt(nrow(Jupiter_data_presence_train))),  # NB
-    maxcor = c(0.1, 1),
-    maximp = c(0.1, 1),
-    extratrees = c(1L, 2L)
-  ), 
+  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+  initgrid = ingrid,
   folds = tr_ind_Jupiter_presence,  # NB
   sumfun = twoClassSummary, 
   metric = "ROC", 
   max_metric = TRUE, 
   classprob = TRUE, 
-  cores = 19, 
+  cores = n_cores, 
   seed = 875982760,  
   numtrees = 100
 )
@@ -360,53 +404,58 @@ varImp(model_Jupiter_presence)
 
 # Ochre model for peat
 
-set.seed(875982760)
+bounds_and_grid_i <- make_bounds_and_grid(
+  cov_names = cov_names_selected,
+  data = ochre_data_peat_train,
+  rows_grid = n_cores*2,
+  seed = 875982760
+)
+
+bounds_opt <- bounds_and_grid_i$bounds
+ingrid <- bounds_and_grid_i$grid
 
 model_ochre_peat <- optimize_ranger(
   data = ochre_data_peat_train,  # NB
   target = "is_peat", # NB
   cov_names = cov_names_selected,
-  bounds_bayes = list(
-    mtry = c(2, length(cov_names_selected)),  
-    sqrt_min.node.size = c(1, sqrt(nrow(ochre_data_peat_train))),  # NB
-    maxcor = c(0.1, 1),
-    maximp = c(0.1, 1),
-    extratrees = c(1L, 2L)
-  ), 
+  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+  initgrid = ingrid,
   folds = tr_ind_ochre_peat,  # NB
   sumfun = twoClassSummary, 
   metric = "ROC", 
   max_metric = TRUE, 
   classprob = TRUE, 
-  cores = 19, 
+  cores = n_cores, 
   seed = 875982760,  
   numtrees = 100
 )
-
 
 model_ochre_peat
 
 # Ochre model for presence
 
-set.seed(875982760)
+bounds_and_grid_i <- make_bounds_and_grid(
+  cov_names = cov_names_selected,
+  data = ochre_data_presence_train,
+  rows_grid = n_cores*2,
+  seed = 875982760
+)
+
+bounds_opt <- bounds_and_grid_i$bounds
+ingrid <- bounds_and_grid_i$grid
 
 model_ochre_presence <- optimize_ranger(
   data = ochre_data_presence_train,  # NB
   target = "sampled", # NB
   cov_names = cov_names_selected,
-  bounds_bayes = list(
-    mtry = c(2, length(cov_names_selected)),  
-    sqrt_min.node.size = c(1, sqrt(nrow(ochre_data_presence_train))),  # NB
-    maxcor = c(0.1, 1),
-    maximp = c(0.1, 1),
-    extratrees = c(1L, 2L)
-  ), 
+  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+  initgrid = ingrid,
   folds = tr_ind_ochre_presence,  # NB
   sumfun = twoClassSummary, 
   metric = "ROC", 
   max_metric = TRUE, 
   classprob = TRUE, 
-  cores = 19, 
+  cores = n_cores, 
   seed = 875982760,  
   numtrees = 100
 )
@@ -444,25 +493,28 @@ for (i in 1:nrow(LU_1700_summary)) {
         )
     )
   
-  set.seed(875982760)
+  bounds_and_grid_i <- make_bounds_and_grid(
+    cov_names = cov_names_LU,
+    data = LU_train_i,
+    rows_grid = n_cores*2,
+    seed = 875982760
+  )
+  
+  bounds_opt <- bounds_and_grid_i$bounds
+  ingrid <- bounds_and_grid_i$grid
   
   LU_models[[i]] <- optimize_ranger(
     data = LU_train_i,  # NB
     target = "is_lu", # NB
     cov_names = cov_names_LU,
-    bounds_bayes = list(
-      mtry = c(2, length(cov_names_LU)),  
-      sqrt_min.node.size = c(1, sqrt(nrow(LU_train_i))),  # NB
-      maxcor = c(0.1, 1),
-      maximp = c(0.1, 1),
-      extratrees = c(1L, 2L)
-    ), 
+    bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+    initgrid = ingrid,
     folds = tr_ind_LU,  # NB
     sumfun = twoClassSummary, 
     metric = "ROC", 
     max_metric = TRUE, 
     classprob = TRUE, 
-    cores = 19, 
+    cores = n_cores, 
     seed = 875982760,  
     numtrees = 100
   )
@@ -472,8 +524,6 @@ for (i in 1:nrow(LU_1700_summary)) {
 }
 
 names(LU_models) <- LU_1700_summary$LU_txt_nospace
-
-
 
 # Load covariate tile
 
@@ -576,8 +626,6 @@ for (i in 1:length(LU_models)) {
     index = 2
   )
 }
-
-
 
 plot(rast(lu_prob_pred))
 

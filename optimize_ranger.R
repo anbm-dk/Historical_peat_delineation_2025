@@ -13,7 +13,8 @@ optimize_ranger <- function(
     classprob = FALSE, # should class probabilities be calculated
     cores = 19, # number cores for parallelization
     seed = NULL,  # Random seed for model training
-    numtrees = 100
+    numtrees = 100,
+    initgrid = NULL
 ) {
   require(ParBayesianOptimization)
   require(caret)
@@ -21,6 +22,8 @@ optimize_ranger <- function(
   require(magrittr)
   require(dplyr)
   require(parallel)
+  require(tools)
+  require(boot)
   source("select_vars.R")
   
   formula_0 <- cov_names %>%
@@ -64,6 +67,7 @@ optimize_ranger <- function(
       min.node.size = round(sqrt_min.node.size^2),
       splitrule = splitrules[extratrees],
       num.threads = 1,
+      # num.threads = cores,
       verbose = FALSE,
       node.stats = FALSE,
       seed = seed,
@@ -104,7 +108,8 @@ optimize_ranger <- function(
         allowParallel = FALSE
       ),
       num.threads = 1,
-      importance = "impurity",
+      # num.threads = cores,
+      importance = "none",
       tuneGrid = expand.grid(
         mtry = round(min(mtry, length(cov_filtered))),  
         min.node.size = round(sqrt_min.node.size^2),
@@ -166,12 +171,13 @@ optimize_ranger <- function(
   scoreresults <- ParBayesianOptimization::bayesOpt(
     FUN = scoringFunction,
     bounds = bounds_bayes,
-    initPoints = cores*2,
-    iters.n = cores*10,
+    # initPoints = cores*2,
+    # iters.n = cores*10,
     iters.k = cores,
     acq = "ucb",
     gsPoints = cores*10,
     parallel = TRUE,
+    initGrid = initgrid,
     verbose = 0,
     acqThresh = 0.95
   )
@@ -194,32 +200,11 @@ optimize_ranger <- function(
     probability = FALSE,
     min.node.size = round(best_pars$sqrt_min.node.size^2),
     splitrule = splitrules[best_pars$extratrees],
-    num.threads = 1,
+    num.threads = cores,
     verbose = FALSE,
     node.stats = FALSE,
     seed = seed,
     na.action = "na.omit"
-  )
-
-  model_0 <- caret::train(
-    form = formula_0,
-    data =  data,
-    method = "ranger",
-    trControl = trainControl(
-      index = folds,
-      summaryFunction = sumfun,
-      classProbs = classprob,
-      allowParallel = FALSE
-    ),
-    importance = "impurity",
-    tuneGrid = expand.grid(
-      mtry = round(best_pars$mtry),  
-      min.node.size = round(best_pars$sqrt_min.node.size^2),
-      splitrule = splitrules[best_pars$extratrees]
-    ),
-    num.trees = numtrees,
-    metric = metric,
-    na.action = na.omit
   )
   
   my_imp <- sort(model_0$variable.importance) %>% 
@@ -242,10 +227,7 @@ optimize_ranger <- function(
     paste0(collapse = " + ") %>%
     paste0(target, " ~ ", .) %>%
     as.formula()
-  showConnections()
-  cl <- parallel::makePSOCKcluster(cores, outfile = "log.txt")
-  # on.exit(parallel::stopCluster(cl))
-  doParallel::registerDoParallel(cl)
+
   set.seed(seed)
   model_final <- caret::train(
     form = formula_final,
@@ -260,16 +242,15 @@ optimize_ranger <- function(
     importance = "impurity",
     tuneGrid = expand.grid(
       mtry = round(min(best_pars$mtry, length(cov_filtered))),  
-      min.node.size = round(best_pars$min.node.size),
+      min.node.size = round(best_pars$sqrt_min.node.size^2),
       splitrule = splitrules[best_pars$extratrees]
     ),
+    num.threads = cores,
     num.trees = numtrees,
     metric = metric,
     na.action = na.omit
   )
-  stopCluster(cl)
-  foreach::registerDoSEQ()
-  rm(cl)
+
   return(
     list(
       model = model_final,

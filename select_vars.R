@@ -13,6 +13,10 @@ select_vars <- function(
   
   covnames <- names(importance)
   
+  index_cor_imp <- match(covnames, colnames(correlation))
+  
+  correlation <- correlation[index_cor_imp, index_cor_imp]
+  
   diag(correlation) <- NA
   
   vars_selected <- covnames[1]
@@ -35,7 +39,9 @@ select_vars <- function(
     
     var_i <- covnames[i]
     
-    ind_i <- c(which(vars_selected %in% covnames), i)
+    vars_i <- c(vars_selected, var_i)
+    
+    ind_i <- match(vars_i, covnames)
     
     maxcors_loop[i] <- max(correlation[ind_i, ind_i], na.rm = TRUE)
     sumimps_loop[i] <- sum(importance[ind_i], na.rm = TRUE)

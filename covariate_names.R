@@ -1,4 +1,4 @@
-# Covariate nanes
+# Covariate names
 
 # Load covariates
 
