@@ -296,9 +296,11 @@ tr_ind_ochre_peat <- make_indices_train(ochre_data_peat_train$fold)
 tr_ind_ochre_presence <- make_indices_train(ochre_data_presence_train$fold)
 tr_ind_LU <- make_indices_train(LU1700_data_train$fold)
 
+
 # Preliminary models
 
 n_cores <- 19
+n_trees <- 10
 
 source("optimize_ranger.R")
 
@@ -363,14 +365,14 @@ model_Jupiter_peat <- optimize_ranger(
   classprob = TRUE, # should class probabilities be calculated
   cores = n_cores, # number cores for parallelization
   seed = 875982760,  # Random seed for model training
-  numtrees = 100
+  numtrees = n_trees
 )
 
 model_Jupiter_peat
 
 varImp(model_Jupiter_peat$model)
 
-# Jupiter model for point distibutions
+# Jupiter model for point distributions
 
 bounds_and_grid_i <- make_bounds_and_grid(
   cov_names = cov_names_selected,
@@ -395,12 +397,11 @@ model_Jupiter_presence <- optimize_ranger(
   classprob = TRUE, 
   cores = n_cores, 
   seed = 875982760,  
-  numtrees = 100
+  numtrees = n_trees
 )
 
 model_Jupiter_presence
 
-varImp(model_Jupiter_presence)
 
 # Ochre model for peat
 
@@ -418,7 +419,7 @@ model_ochre_peat <- optimize_ranger(
   data = ochre_data_peat_train,  # NB
   target = "is_peat", # NB
   cov_names = cov_names_selected,
-  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+  bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
   initgrid = ingrid,
   folds = tr_ind_ochre_peat,  # NB
   sumfun = twoClassSummary, 
@@ -427,7 +428,7 @@ model_ochre_peat <- optimize_ranger(
   classprob = TRUE, 
   cores = n_cores, 
   seed = 875982760,  
-  numtrees = 100
+  numtrees = n_trees
 )
 
 model_ochre_peat
@@ -448,7 +449,7 @@ model_ochre_presence <- optimize_ranger(
   data = ochre_data_presence_train,  # NB
   target = "sampled", # NB
   cov_names = cov_names_selected,
-  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+  bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
   initgrid = ingrid,
   folds = tr_ind_ochre_presence,  # NB
   sumfun = twoClassSummary, 
@@ -457,7 +458,7 @@ model_ochre_presence <- optimize_ranger(
   classprob = TRUE, 
   cores = n_cores, 
   seed = 875982760,  
-  numtrees = 100
+  numtrees = n_trees
 )
 
 model_ochre_presence
@@ -507,7 +508,7 @@ for (i in 1:nrow(LU_1700_summary)) {
     data = LU_train_i,  # NB
     target = "is_lu", # NB
     cov_names = cov_names_LU,
-    bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+    bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
     initgrid = ingrid,
     folds = tr_ind_LU,  # NB
     sumfun = twoClassSummary, 
@@ -516,7 +517,7 @@ for (i in 1:nrow(LU_1700_summary)) {
     classprob = TRUE, 
     cores = n_cores, 
     seed = 875982760,  
-    numtrees = 100
+    numtrees = n_trees
   )
   
   print(LU_1700_summary$LU_txt_nospace[i])
@@ -574,6 +575,14 @@ pred_jup_presence <- terra::predict(
 
 plot(pred_jup_presence)
 
+prob_presence_jup <- pred_jup_peat*pred_jup_presence
+prob_absence_jup <- (1-pred_jup_peat)*pred_jup_presence
+peat_unc_jup <- (1 - (prob_presence_jup - prob_absence_jup)^2)
+
+plot(prob_presence_jup)
+plot(prob_absence_jup)
+plot(peat_unc_jup)
+
 # Try mapping peat based on ochre db
 
 model_i <- model_ochre_peat$model
@@ -608,6 +617,14 @@ pred_ochre_presence <- terra::predict(
 
 plot(pred_ochre_presence)
 
+prob_presence_ochre <- pred_ochre_peat*pred_ochre_presence
+prob_absence_ochre <- (1-pred_ochre_peat)*pred_ochre_presence
+peat_unc_ochre <- (1 - (prob_presence_ochre - prob_absence_ochre)^2)
+
+plot(prob_presence_ochre)
+plot(prob_absence_ochre)
+plot(peat_unc_ochre)
+
 # Map land use probability
 
 lu_prob_pred <- list()
@@ -627,6 +644,280 @@ for (i in 1:length(LU_models)) {
   )
 }
 
-plot(rast(lu_prob_pred))
+names(lu_prob_pred) <- LU_1700_summary$LU_txt_nospace
+
+lu_prob_rast <- rast(lu_prob_pred)
+
+plot(lu_prob_rast)
+
+lu_prob_sum <- sum(lu_prob_rast)
+
+plot(lu_prob_sum)
+
+lu_prob_rast2 <- lu_prob_rast / lu_prob_sum
+
+plot(lu_prob_rast2)
+
+lu_pred <- which.max(lu_prob_rast2)
+  
+levels(lu_pred) <- select(LU_1700_summary, c(lu18thcent, LU_txt))
+
+plot(lu_pred)
+
+library(probably)
+
+# Predict for all tiles
+
+library(parallel)
+library(caret)
+library(terra)
+library(magrittr)
+library(dplyr)
+library(foreach)
+library(stringr)
+
+
+# Tiles for model prediction
+
+numCores <- detectCores()
+numCores
+
+dir_tiles <- root %>%
+  paste0(., "/tiles_591/")
+
+subdir_tiles <- dir_tiles %>%
+  list.dirs() %>%
+  .[-1]
+
+dir_pred_all <- dir_dat %>%
+  paste0(., "/predictions/") %T>%
+  dir.create(showWarnings = FALSE, recursive = TRUE)
+
+dir_pred_tiles <- dir_pred_all %>%
+  paste0(., "/tiles/") %T>%
+  dir.create(showWarnings = FALSE, recursive = TRUE)
+
+# Function for tiled predictions
+
+predict_tiles <- function(
+    model = NULL,
+    target = NULL,
+    subdir_tiles = NULL,
+    dir_pred_all = NULL,
+    dir_pred_tiles = NULL,
+    cores = NULL,
+    digits = NULL,
+    temp = NULL
+) {
+  cov_selected <- names(model$finalModel$variable.importance)
+  
+  dir_pred_tiles_target <- dir_pred_tiles %>%
+    paste0(
+      ., "/", target, "/"
+    ) %T>%
+    dir.create(showWarnings = FALSE, recursive = TRUE)
+  
+  showConnections()
+  
+  cl <- makeCluster(cores)
+  
+  clusterEvalQ(
+    cl,
+    {
+      library(terra)
+      library(caret)
+      library(ranger)
+      library(magrittr)
+      library(dplyr)
+      library(tools)
+    }
+  )
+  
+  clusterExport(
+    cl,
+    c(
+      "model",
+      "subdir_tiles",
+      "dir_pred_tiles_target",
+      "target",
+      "cov_selected",
+      "digits",
+      "temp"
+    ),
+    envir = environment()
+  )
+  
+  parSapplyLB(
+    cl,
+    1:length(subdir_tiles),
+    function(x) {
+      terraOptions(memfrac = 0.02, tempdir = temp)
+      
+      cov_x_files <- subdir_tiles[x] %>%
+        list.files(full.names = TRUE)
+      
+      cov_x_names <- cov_x_files %>%
+        basename() %>%
+        file_path_sans_ext()
+      
+      cov_x <- cov_x_files %>% rast()
+      
+      names(cov_x) <- cov_x_names
+      
+      cov_x %<>% subset(cov_selected)
+      
+      tilename_x <- basename(subdir_tiles[x])
+      
+      outname_x <- dir_pred_tiles_target %>%
+        paste0(
+          ., "/", target, "_",
+          tilename_x, ".tif"
+        )
+      
+      pred_x <- terra::predict(
+        cov_x,
+        model = model$finalModel,
+        na.rm = TRUE,
+        fun = function(model, ...) round(predict(model, ...)$predictions, digits = digits),
+        index = 2,
+        cores = 1,
+        filename = outname_x,
+        overwrite = TRUE
+      )
+      
+      # math(
+      #   pred_x, 
+      #   "round",
+      #   digits = digits,
+      #   filename = outname_x,
+      #   overwrite = TRUE
+      # )
+      
+      return(NULL)
+    }
+  )
+  
+  stopCluster(cl)
+  foreach::registerDoSEQ()
+  rm(cl)
+  
+  outtiles_target <- dir_pred_tiles_target %>%
+    list.files(full.names = TRUE) %>%
+    sprc()
+  
+  merge(
+    outtiles_target,
+    filename = paste0(
+      dir_pred_all, target, ".tif"),
+    overwrite = TRUE,
+    gdal = "TILED=YES",
+    names = target
+  )
+}
+
+# Predict peat from Jupiter
+
+predict_tiles(
+    model = model_Jupiter_peat$model,
+    target = "Jupiter_ispeat",
+    subdir_tiles = subdir_tiles,
+    dir_pred_all = dir_pred_all,
+    dir_pred_tiles = dir_pred_tiles,
+    cores = numCores,
+    digits = 3,
+    temp = tmpfolder
+)
+
+# unlink(
+#   list.files(tmpfolder, full.names = TRUE),
+#   recursive = TRUE,
+#   force = TRUE
+# )
+
+# Predict relative sampling density from Jupiter
+
+predict_tiles(
+  model = model_Jupiter_presence$model,
+  target = "Jupiter_rsd",
+  subdir_tiles = subdir_tiles,
+  dir_pred_all = dir_pred_all,
+  dir_pred_tiles = dir_pred_tiles,
+  cores = numCores,
+  digits = 3,
+  temp = tmpfolder
+)
+
+# Calculate presence and absence probabilities plus uncertainty before deleting
+# the tiles.
+
+unlink(
+  list.files(tmpfolder, full.names = TRUE),
+  recursive = TRUE,
+  force = TRUE
+)
+
+# Predict peat from OchreDB
+
+predict_tiles(
+  model = model_ochre_peat$model,
+  target = "OchreDB_ispeat",
+  subdir_tiles = subdir_tiles,
+  dir_pred_all = dir_pred_all,
+  dir_pred_tiles = dir_pred_tiles,
+  cores = numCores,
+  digits = 3,
+  temp = tmpfolder
+)
+
+# unlink(
+#   list.files(tmpfolder, full.names = TRUE),
+#   recursive = TRUE,
+#   force = TRUE
+# )
+
+# Predict relative sampling density  from OchreDB
+
+predict_tiles(
+  model = model_ochre_presence$model,
+  target = "OchreDB_rsd",
+  subdir_tiles = subdir_tiles,
+  dir_pred_all = dir_pred_all,
+  dir_pred_tiles = dir_pred_tiles,
+  cores = numCores,
+  digits = 3,
+  temp = tmpfolder
+)
+
+# Calculate presence and absence probabilities plus uncertainty before deleting
+# the tiles.
+
+unlink(
+  list.files(tmpfolder, full.names = TRUE),
+  recursive = TRUE,
+  force = TRUE
+)
+
+# Predict LU
+
+for (i in 1:length(LU_models)) {
+  predict_tiles(
+    model = LU_models[[i]]$model,
+    target = paste0("LU1700_", LU_1700_summary$LU_txt_nospace[i]),
+    subdir_tiles = subdir_tiles,
+    dir_pred_all = dir_pred_all,
+    dir_pred_tiles = dir_pred_tiles,
+    cores = numCores,
+    digits = 3,
+    temp = tmpfolder
+  )
+}
+
+# Normalize probabilities and calculate classes before deleting the tiles.
+
+unlink(
+  list.files(tmpfolder, full.names = TRUE),
+  recursive = TRUE,
+  force = TRUE
+)
 
 # END

@@ -14,7 +14,8 @@ optimize_ranger <- function(
     cores = 19, # number cores for parallelization
     seed = NULL,  # Random seed for model training
     numtrees = 100,
-    initgrid = NULL
+    initgrid = NULL,
+    tmp = NULL
 ) {
   require(ParBayesianOptimization)
   require(caret)
@@ -25,6 +26,10 @@ optimize_ranger <- function(
   require(tools)
   require(boot)
   source("select_vars.R")
+  
+  if(is.null(tmp)) {
+    tmp = tempdir()
+  }
   
   formula_0 <- cov_names %>%
     paste0(collapse = " + ") %>%
@@ -137,7 +142,7 @@ optimize_ranger <- function(
   }
   # Bayesian optimization
   showConnections()
-  cl <- parallel::makePSOCKcluster(cores, outfile = "log.txt")
+  cl <- parallel::makePSOCKcluster(cores, outfile = paste0(tmp, "/log.txt"))
   doParallel::registerDoParallel(cl)
   clusterEvalQ(
     cl,
@@ -163,7 +168,8 @@ optimize_ranger <- function(
       "seed",
       "cor_cov",
       "cov_names",
-      "splitrules"
+      "splitrules",
+      "numtrees"
     ),
     envir = environment()
   )
@@ -172,7 +178,7 @@ optimize_ranger <- function(
     FUN = scoringFunction,
     bounds = bounds_bayes,
     # initPoints = cores*2,
-    # iters.n = cores*10,
+    iters.n = cores*10,
     iters.k = cores,
     acq = "ucb",
     gsPoints = cores*10,
@@ -237,7 +243,8 @@ optimize_ranger <- function(
       index = folds,
       summaryFunction = sumfun,
       classProbs = classprob,
-      allowParallel = FALSE
+      allowParallel = FALSE,
+      savePredictions = "final",
     ),
     importance = "impurity",
     tuneGrid = expand.grid(
