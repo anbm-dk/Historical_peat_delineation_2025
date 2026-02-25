@@ -69,11 +69,9 @@ cov_all <- dir_cov %>%
   ) %>%
   rast()
 
-names(cov_all)
-
 covnames_topo_clim <- c(
-  "chelsa_bio01_1981_2010_10m",
-  "chelsa_bio12_1981_2010_10m",
+  "chelsa_bio01_1981_2010_mat",
+  "chelsa_bio12_1981_2010_ap",
   "convergence_index",
   "cos_aspect_radians",
   "cross_sectional_curvature",
@@ -84,12 +82,11 @@ covnames_topo_clim <- c(
   "hillyness",
   "longitudinal_curvature",
   "maximal_curvature",
-  "mid_slope_positon",
+  "mid_slope_position",
   "minimal_curvature",
   "normalized_height",
   "positive_openness",
   "profile_curvature",
-  "profile_curvature2", 
   "rvb_bios",
   "rvb_fot",
   "saga_wetness_index",
@@ -118,6 +115,16 @@ cov_names_selected <- c(
     names() %>%
     str_subset(pattern = "ogc_", negate = FALSE),
   covnames_topo_clim
+)
+
+setdiff(
+  cov_names_selected,
+  names(cov_all)
+)
+
+base::setdiff(
+  names(cov_all),
+  cov_names_selected
 )
 
 cov_selected <- cov_all %>%
