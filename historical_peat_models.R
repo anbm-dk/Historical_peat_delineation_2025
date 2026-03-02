@@ -300,7 +300,7 @@ tr_ind_LU <- make_indices_train(LU1700_data_train$fold)
 # Preliminary models
 
 n_cores <- 19
-n_trees <- 10
+n_trees <- 100
 
 source("optimize_ranger.R")
 
@@ -372,6 +372,11 @@ model_Jupiter_peat
 
 varImp(model_Jupiter_peat$model)
 
+saveRDS(
+  model_Jupiter_peat,
+  paste0(dir_dat, "model_Jupiter_peat.rds")
+)
+
 # Jupiter model for point distributions
 
 bounds_and_grid_i <- make_bounds_and_grid(
@@ -402,6 +407,12 @@ model_Jupiter_presence <- optimize_ranger(
 
 model_Jupiter_presence
 
+varImp(model_Jupiter_presence$model)
+
+saveRDS(
+  model_Jupiter_presence,
+  paste0(dir_dat, "model_Jupiter_presence.rds")
+)
 
 # Ochre model for peat
 
@@ -433,6 +444,13 @@ model_ochre_peat <- optimize_ranger(
 
 model_ochre_peat
 
+varImp(model_ochre_peat$model)
+
+saveRDS(
+  model_ochre_peat,
+  paste0(dir_dat, "model_ochre_peat.rds")
+)
+
 # Ochre model for presence
 
 bounds_and_grid_i <- make_bounds_and_grid(
@@ -463,6 +481,12 @@ model_ochre_presence <- optimize_ranger(
 
 model_ochre_presence
 
+varImp(model_ochre_presence$model)
+
+saveRDS(
+  model_ochre_peat,
+  paste0(dir_dat, "model_ochre_presence.rds")
+)
 
 # 1700s Land use models
 
@@ -522,9 +546,24 @@ for (i in 1:nrow(LU_1700_summary)) {
   
   print(LU_1700_summary$LU_txt_nospace[i])
   print(LU_models[[i]])
+  
+  varImp(LU_models[[i]]$model)
+  
+  saveRDS(
+    LU_models[[i]],
+    paste0(
+      dir_dat, "model_1700s_", str_pad(i, width = 2, pad = "0"),  "_", 
+      LU_1700_summary$LU_txt_nospace[i],  ".rds"
+    )
+  )
 }
 
 names(LU_models) <- LU_1700_summary$LU_txt_nospace
+
+# saveRDS(
+#   LU_models,
+#   paste0(dir_dat, "LU_models_all.rds")
+# )
 
 # Load covariate tile
 
