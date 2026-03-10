@@ -300,7 +300,7 @@ tr_ind_LU <- make_indices_train(LU1700_data_train$fold)
 # Preliminary models
 
 n_cores <- 19
-n_trees <- 100
+n_trees <- 500
 
 source("optimize_ranger.R")
 
@@ -352,30 +352,34 @@ bounds_and_grid_i <- make_bounds_and_grid(
 bounds_opt <- bounds_and_grid_i$bounds
 ingrid <- bounds_and_grid_i$grid
 
-model_Jupiter_peat <- optimize_ranger(
-  data = Jupiter_data_peat_train,
-  target = "is_peat",
-  cov_names = cov_names_selected,
-  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
-  initgrid = ingrid,
-  folds = tr_ind_Jupiter_peat, # list with indices, folds for cross validation
-  sumfun = twoClassSummary, # summary function for accuracy assessment
-  metric = "ROC", # character, length 1, name of evaluation metric
-  max_metric = TRUE, # logical, should the evaluation metric be maximized
-  classprob = TRUE, # should class probabilities be calculated
-  cores = n_cores, # number cores for parallelization
-  seed = 875982760,  # Random seed for model training
-  numtrees = n_trees
-)
+# model_Jupiter_peat <- optimize_ranger(
+#   data = Jupiter_data_peat_train,
+#   target = "is_peat",
+#   cov_names = cov_names_selected,
+#   bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+#   initgrid = ingrid,
+#   folds = tr_ind_Jupiter_peat, # list with indices, folds for cross validation
+#   sumfun = twoClassSummary, # summary function for accuracy assessment
+#   metric = "ROC", # character, length 1, name of evaluation metric
+#   max_metric = TRUE, # logical, should the evaluation metric be maximized
+#   classprob = TRUE, # should class probabilities be calculated
+#   cores = n_cores, # number cores for parallelization
+#   seed = 875982760,  # Random seed for model training
+#   numtrees = n_trees
+# )
+# 
+# saveRDS(
+#   model_Jupiter_peat,
+#   paste0(dir_dat, "model_Jupiter_peat.rds")
+# )
 
-model_Jupiter_peat
-
-varImp(model_Jupiter_peat$model)
-
-saveRDS(
-  model_Jupiter_peat,
+model_Jupiter_peat <- readRDS(
   paste0(dir_dat, "model_Jupiter_peat.rds")
 )
+
+model_Jupiter_peat$best_scores
+model_Jupiter_peat$model
+varImp(model_Jupiter_peat$model)
 
 # Jupiter model for point distributions
 
@@ -389,30 +393,35 @@ bounds_and_grid_i <- make_bounds_and_grid(
 bounds_opt <- bounds_and_grid_i$bounds
 ingrid <- bounds_and_grid_i$grid
 
-model_Jupiter_presence <- optimize_ranger(
-  data = Jupiter_data_presence_train,  # NB
-  target = "sampled", # NB
-  cov_names = cov_names_selected,
-  bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
-  initgrid = ingrid,
-  folds = tr_ind_Jupiter_presence,  # NB
-  sumfun = twoClassSummary, 
-  metric = "ROC", 
-  max_metric = TRUE, 
-  classprob = TRUE, 
-  cores = n_cores, 
-  seed = 875982760,  
-  numtrees = n_trees
-)
+# model_Jupiter_presence <- optimize_ranger(
+#   data = Jupiter_data_presence_train,  # NB
+#   target = "sampled", # NB
+#   cov_names = cov_names_selected,
+#   bounds_bayes = bounds_opt, # named list with bounds for bayesian opt.
+#   initgrid = ingrid,
+#   folds = tr_ind_Jupiter_presence,  # NB
+#   sumfun = twoClassSummary, 
+#   metric = "ROC", 
+#   max_metric = TRUE, 
+#   classprob = TRUE, 
+#   cores = n_cores, 
+#   seed = 875982760,  
+#   numtrees = n_trees
+# )
+# 
+# saveRDS(
+#   model_Jupiter_presence,
+#   paste0(dir_dat, "model_Jupiter_presence.rds")
+# )
 
-model_Jupiter_presence
-
-varImp(model_Jupiter_presence$model)
-
-saveRDS(
-  model_Jupiter_presence,
+model_Jupiter_presence <- readRDS(
   paste0(dir_dat, "model_Jupiter_presence.rds")
 )
+
+model_Jupiter_presence$best_scores
+model_Jupiter_presence$model
+varImp(model_Jupiter_presence$model)
+
 
 # Ochre model for peat
 
@@ -426,30 +435,35 @@ bounds_and_grid_i <- make_bounds_and_grid(
 bounds_opt <- bounds_and_grid_i$bounds
 ingrid <- bounds_and_grid_i$grid
 
-model_ochre_peat <- optimize_ranger(
-  data = ochre_data_peat_train,  # NB
-  target = "is_peat", # NB
-  cov_names = cov_names_selected,
-  bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
-  initgrid = ingrid,
-  folds = tr_ind_ochre_peat,  # NB
-  sumfun = twoClassSummary, 
-  metric = "ROC", 
-  max_metric = TRUE, 
-  classprob = TRUE, 
-  cores = n_cores, 
-  seed = 875982760,  
-  numtrees = n_trees
-)
+# model_ochre_peat <- optimize_ranger(
+#   data = ochre_data_peat_train,  # NB
+#   target = "is_peat", # NB
+#   cov_names = cov_names_selected,
+#   bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
+#   initgrid = ingrid,
+#   folds = tr_ind_ochre_peat,  # NB
+#   sumfun = twoClassSummary, 
+#   metric = "ROC", 
+#   max_metric = TRUE, 
+#   classprob = TRUE, 
+#   cores = n_cores, 
+#   seed = 875982760,  
+#   numtrees = n_trees
+# )
+# 
+# saveRDS(
+#   model_ochre_peat,
+#   paste0(dir_dat, "model_ochre_peat.rds")
+# )
 
-model_ochre_peat
-
-varImp(model_ochre_peat$model)
-
-saveRDS(
-  model_ochre_peat,
+model_ochre_peat <- readRDS(
   paste0(dir_dat, "model_ochre_peat.rds")
 )
+
+model_ochre_peat$best_scores
+model_ochre_peat$model
+varImp(model_ochre_peat$model)
+
 
 # Ochre model for presence
 
@@ -463,30 +477,35 @@ bounds_and_grid_i <- make_bounds_and_grid(
 bounds_opt <- bounds_and_grid_i$bounds
 ingrid <- bounds_and_grid_i$grid
 
-model_ochre_presence <- optimize_ranger(
-  data = ochre_data_presence_train,  # NB
-  target = "sampled", # NB
-  cov_names = cov_names_selected,
-  bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
-  initgrid = ingrid,
-  folds = tr_ind_ochre_presence,  # NB
-  sumfun = twoClassSummary, 
-  metric = "ROC", 
-  max_metric = TRUE, 
-  classprob = TRUE, 
-  cores = n_cores, 
-  seed = 875982760,  
-  numtrees = n_trees
-)
+# model_ochre_presence <- optimize_ranger(
+#   data = ochre_data_presence_train,  # NB
+#   target = "sampled", # NB
+#   cov_names = cov_names_selected,
+#   bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
+#   initgrid = ingrid,
+#   folds = tr_ind_ochre_presence,  # NB
+#   sumfun = twoClassSummary,
+#   metric = "ROC",
+#   max_metric = TRUE,
+#   classprob = TRUE,
+#   cores = n_cores,
+#   seed = 875982760,
+#   numtrees = n_trees
+# )
+# 
+# saveRDS(
+#   model_ochre_presence,
+#   paste0(dir_dat, "model_ochre_presence.rds")
+# )
 
-model_ochre_presence
-
-varImp(model_ochre_presence$model)
-
-saveRDS(
-  model_ochre_peat,
+model_ochre_presence <- readRDS(
   paste0(dir_dat, "model_ochre_presence.rds")
 )
+
+model_ochre_presence$best_scores
+model_ochre_presence$model
+varImp(model_ochre_presence$model)
+
 
 # 1700s Land use models
 
@@ -508,54 +527,68 @@ LU_1700_summary <- LU_1700_pts %>%
 
 LU_models <- list()
 
+# for (i in 1:nrow(LU_1700_summary)) {
+#   LU_train_i <- LU1700_data_train %>%
+#     mutate(
+#       is_lu = factor(
+#         as.numeric(lu18thcent == i),
+#         levels = c(0, 1),
+#         labels = c("No", "Yes")
+#         )
+#     )
+#   
+#   bounds_and_grid_i <- make_bounds_and_grid(
+#     cov_names = cov_names_LU,
+#     data = LU_train_i,
+#     rows_grid = n_cores*2,
+#     seed = 875982760
+#   )
+#   
+#   bounds_opt <- bounds_and_grid_i$bounds
+#   ingrid <- bounds_and_grid_i$grid
+#   
+#   LU_models[[i]] <- optimize_ranger(
+#     data = LU_train_i,  # NB
+#     target = "is_lu", # NB
+#     cov_names = cov_names_LU,
+#     bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
+#     initgrid = ingrid,
+#     folds = tr_ind_LU,  # NB
+#     sumfun = twoClassSummary, 
+#     metric = "ROC", 
+#     max_metric = TRUE, 
+#     classprob = TRUE, 
+#     cores = n_cores, 
+#     seed = 875982760,  
+#     numtrees = n_trees
+#   )
+#   
+#   print(LU_1700_summary$LU_txt_nospace[i])
+#   print(LU_models[[i]])
+#   
+#   varImp(LU_models[[i]]$model)
+#   
+#   saveRDS(
+#     LU_models[[i]],
+#     paste0(
+#       dir_dat, "model_1700s_", str_pad(i, width = 2, pad = "0"),  "_", 
+#       LU_1700_summary$LU_txt_nospace[i],  ".rds"
+#     )
+#   )
+# }
+
 for (i in 1:nrow(LU_1700_summary)) {
-  LU_train_i <- LU1700_data_train %>%
-    mutate(
-      is_lu = factor(
-        as.numeric(lu18thcent == i),
-        levels = c(0, 1),
-        labels = c("No", "Yes")
-        )
-    )
-  
-  bounds_and_grid_i <- make_bounds_and_grid(
-    cov_names = cov_names_LU,
-    data = LU_train_i,
-    rows_grid = n_cores*2,
-    seed = 875982760
-  )
-  
-  bounds_opt <- bounds_and_grid_i$bounds
-  ingrid <- bounds_and_grid_i$grid
-  
-  LU_models[[i]] <- optimize_ranger(
-    data = LU_train_i,  # NB
-    target = "is_lu", # NB
-    cov_names = cov_names_LU,
-    bounds_bayes = bounds_opt, # named list with bounds for Bayesian opt.
-    initgrid = ingrid,
-    folds = tr_ind_LU,  # NB
-    sumfun = twoClassSummary, 
-    metric = "ROC", 
-    max_metric = TRUE, 
-    classprob = TRUE, 
-    cores = n_cores, 
-    seed = 875982760,  
-    numtrees = n_trees
-  )
-  
-  print(LU_1700_summary$LU_txt_nospace[i])
-  print(LU_models[[i]])
-  
-  varImp(LU_models[[i]]$model)
-  
-  saveRDS(
-    LU_models[[i]],
+  LU_models[[i]] <- readRDS(
     paste0(
-      dir_dat, "model_1700s_", str_pad(i, width = 2, pad = "0"),  "_", 
+      dir_dat, "model_1700s_", str_pad(i, width = 2, pad = "0"),  "_",
       LU_1700_summary$LU_txt_nospace[i],  ".rds"
     )
   )
+  
+  print(LU_1700_summary$LU_txt_nospace[i])
+  print(LU_models[[i]]$best_scores)
+  print(LU_models[[i]]$model)
+  print(varImp(LU_models[[i]]$model))
 }
 
 names(LU_models) <- LU_1700_summary$LU_txt_nospace
@@ -565,145 +598,175 @@ names(LU_models) <- LU_1700_summary$LU_txt_nospace
 #   paste0(dir_dat, "LU_models_all.rds")
 # )
 
-# Load covariate tile
 
-tile_dirs <- list.dirs(
-  paste0(root, "/tiles_591"), 
-  recursive = FALSE, 
-  full.names = TRUE
-)
-
-cov_tile_300 <- tile_dirs[300] %>%
-  list.files(
-    pattern = "\\.tif$",
-    full.names = TRUE
-  ) %>%
-  rast()
-
-# Try mapping peat based on jupiter
-
-model_i <- model_Jupiter_peat$model
-
-cov_tile_300_selected <- cov_tile_300 %>%
-  terra::subset(names(model_i$finalModel$variable.importance))
-
-pred_jup_peat <- terra::predict(
-  cov_tile_300_selected,
-  model_i$finalModel,
-  na.rm = TRUE,
-  fun = function(model, ...) predict(model, ...)$predictions,
-  index = 2
-)
-
-plot(pred_jup_peat)
-
-# Map point probability for jupiter
-
-model_i <- model_Jupiter_presence$model
-
-cov_tile_300_selected <- cov_tile_300 %>%
-  terra::subset(names(model_i$finalModel$variable.importance))
-
-pred_jup_presence <- terra::predict(
-  cov_tile_300_selected,
-  model_i$finalModel,
-  na.rm = TRUE,
-  fun = function(model, ...) predict(model, ...)$predictions,
-  index = 2
-)
-
-plot(pred_jup_presence)
-
-prob_presence_jup <- pred_jup_peat*pred_jup_presence
-prob_absence_jup <- (1-pred_jup_peat)*pred_jup_presence
-peat_unc_jup <- (1 - (prob_presence_jup - prob_absence_jup)^2)
-
-plot(prob_presence_jup)
-plot(prob_absence_jup)
-plot(peat_unc_jup)
-
-# Try mapping peat based on ochre db
-
-model_i <- model_ochre_peat$model
-
-cov_tile_300_selected <- cov_tile_300 %>%
-  terra::subset(names(model_i$finalModel$variable.importance))
-
-pred_ochre_peat <- terra::predict(
-  cov_tile_300_selected,
-  model_i$finalModel,
-  na.rm = TRUE,
-  fun = function(model, ...) predict(model, ...)$predictions,
-  index = 2
-)
-
-plot(pred_ochre_peat)
-
-# Map point probability for ochre db
-
-model_i <- model_ochre_presence$model
-
-cov_tile_300_selected <- cov_tile_300 %>%
-  terra::subset(names(model_i$finalModel$variable.importance))
-
-pred_ochre_presence <- terra::predict(
-  cov_tile_300_selected,
-  model_i$finalModel,
-  na.rm = TRUE,
-  fun = function(model, ...) predict(model, ...)$predictions,
-  index = 2
-)
-
-plot(pred_ochre_presence)
-
-prob_presence_ochre <- pred_ochre_peat*pred_ochre_presence
-prob_absence_ochre <- (1-pred_ochre_peat)*pred_ochre_presence
-peat_unc_ochre <- (1 - (prob_presence_ochre - prob_absence_ochre)^2)
-
-plot(prob_presence_ochre)
-plot(prob_absence_ochre)
-plot(peat_unc_ochre)
-
-# Map land use probability
-
-lu_prob_pred <- list()
-
-for (i in 1:length(LU_models)) {
-  model_i <- LU_models[[i]]$model
-  
-  cov_tile_300_selected <- cov_tile_300 %>%
-    terra::subset(names(model_i$finalModel$variable.importance))
-  
-  lu_prob_pred[[i]] <- terra::predict(
-    cov_tile_300_selected,
-    model_i$finalModel,
-    na.rm = TRUE,
-    fun = function(model, ...) predict(model, ...)$predictions,
-    index = 2
-  )
-}
-
-names(lu_prob_pred) <- LU_1700_summary$LU_txt_nospace
-
-lu_prob_rast <- rast(lu_prob_pred)
-
-plot(lu_prob_rast)
-
-lu_prob_sum <- sum(lu_prob_rast)
-
-plot(lu_prob_sum)
-
-lu_prob_rast2 <- lu_prob_rast / lu_prob_sum
-
-plot(lu_prob_rast2)
-
-lu_pred <- which.max(lu_prob_rast2)
-  
-levels(lu_pred) <- select(LU_1700_summary, c(lu18thcent, LU_txt))
-
-plot(lu_pred)
-
-library(probably)
+# # Example maps for tiles
+# # Load covariate tile
+# 
+# tile_dirs <- list.dirs(
+#   paste0(root, "/tiles_591"), 
+#   recursive = FALSE, 
+#   full.names = TRUE
+# )
+# 
+# cov_tile_300 <- tile_dirs[300] %>%
+#   list.files(
+#     pattern = "\\.tif$",
+#     full.names = TRUE
+#   ) %>%
+#   rast()
+# 
+# # Try mapping peat based on jupiter
+# 
+# model_i <- model_Jupiter_peat$model
+# 
+# cov_tile_300_selected <- cov_tile_300 %>%
+#   terra::subset(names(model_i$finalModel$variable.importance))
+# 
+# pred_jup_peat <- terra::predict(
+#   cov_tile_300_selected,
+#   model_i$finalModel,
+#   na.rm = TRUE,
+#   fun = function(model, ...) predict(model, ...)$predictions,
+#   index = 2
+# )
+# 
+# plot(pred_jup_peat)
+# 
+# # Map point probability for jupiter
+# 
+# model_i <- model_Jupiter_presence$model
+# 
+# cov_tile_300_selected <- cov_tile_300 %>%
+#   terra::subset(names(model_i$finalModel$variable.importance))
+# 
+# pred_jup_presence <- terra::predict(
+#   cov_tile_300_selected,
+#   model_i$finalModel,
+#   na.rm = TRUE,
+#   fun = function(model, ...) predict(model, ...)$predictions,
+#   index = 2
+# )
+# 
+# plot(pred_jup_presence)
+# 
+# prob_presence_jup <- pred_jup_peat*pred_jup_presence
+# prob_absence_jup <- (1-pred_jup_peat)*pred_jup_presence
+# peat_unc_jup <- (1 - (prob_presence_jup - prob_absence_jup)^2)
+# 
+# plot(prob_presence_jup)
+# plot(prob_absence_jup)
+# plot(peat_unc_jup)
+# 
+# # Try mapping peat based on ochre db
+# 
+# model_i <- model_ochre_peat$model
+# 
+# cov_tile_300_selected <- cov_tile_300 %>%
+#   terra::subset(names(model_i$finalModel$variable.importance))
+# 
+# pred_ochre_peat <- terra::predict(
+#   cov_tile_300_selected,
+#   model_i$finalModel,
+#   na.rm = TRUE,
+#   fun = function(model, ...) predict(model, ...)$predictions,
+#   index = 2
+# )
+# 
+# plot(pred_ochre_peat)
+# 
+# # Map point probability for ochre db
+# 
+# model_i <- model_ochre_presence$model
+# 
+# cov_tile_300_selected <- cov_tile_300 %>%
+#   terra::subset(names(model_i$finalModel$variable.importance))
+# 
+# pred_ochre_presence <- terra::predict(
+#   cov_tile_300_selected,
+#   model_i$finalModel,
+#   na.rm = TRUE,
+#   fun = function(model, ...) predict(model, ...)$predictions,
+#   index = 2
+# )
+# 
+# plot(pred_ochre_presence)
+# 
+# prob_presence_ochre <- pred_ochre_peat*pred_ochre_presence
+# prob_absence_ochre <- (1-pred_ochre_peat)*pred_ochre_presence
+# peat_unc_ochre <- (1 - (prob_presence_ochre - prob_absence_ochre)^2)
+# 
+# plot(prob_presence_ochre)
+# plot(prob_absence_ochre)
+# plot(peat_unc_ochre)
+# 
+# # Map land use probability
+# 
+# lu_prob_pred <- list()
+# 
+# for (i in 1:length(LU_models)) {
+#   model_i <- LU_models[[i]]$model
+#   
+#   cov_tile_300_selected <- cov_tile_300 %>%
+#     terra::subset(names(model_i$finalModel$variable.importance))
+#   
+#   lu_prob_pred[[i]] <- terra::predict(
+#     cov_tile_300_selected,
+#     model_i$finalModel,
+#     na.rm = TRUE,
+#     fun = function(model, ...) predict(model, ...)$predictions,
+#     index = 2
+#   )
+# }
+# 
+# names(lu_prob_pred) <- LU_1700_summary$LU_txt_nospace
+# 
+# lu_prob_rast <- rast(lu_prob_pred)
+# 
+# plot(lu_prob_rast)
+# 
+# lu_prob_sum <- sum(lu_prob_rast)
+# 
+# plot(lu_prob_sum)
+# 
+# lu_prob_rast2 <- lu_prob_rast / lu_prob_sum
+# 
+# plot(lu_prob_rast2)
+# 
+# lu_pred <- which.max(lu_prob_rast2)
+#   
+# levels(lu_pred) <- select(LU_1700_summary, c(lu18thcent, LU_txt))
+# 
+# plot(lu_pred)
+# 
+# # Try probably package
+# # This takes longer than expected (more than 1 hour), so skip it for now.
+# 
+# library(probably)
+# 
+# LU_caldat <- lapply(
+#   LU_models,
+#   function(x) {
+#     out <- x$model$pred$Yes
+#     return(out)
+#   }
+#   ) %>%
+#   bind_cols()
+# 
+# colnames(LU_caldat) <- LU_1700_summary$LU_txt_nospace
+# 
+# LU_caldat$observed <- as.factor(
+#   LU_1700_summary$LU_txt_nospace[LU1700_data_train$lu18thcent]
+# )
+# 
+# LU_caldat
+# 
+# cal_estimate_multinomial(
+#   LU_caldat, 
+#   truth = observed,
+#   estimate = any_of(
+#     LU_1700_summary$LU_txt_nospace
+#   )
+# )
 
 # Predict for all tiles
 
@@ -824,14 +887,6 @@ predict_tiles <- function(
         overwrite = TRUE
       )
       
-      # math(
-      #   pred_x, 
-      #   "round",
-      #   digits = digits,
-      #   filename = outname_x,
-      #   overwrite = TRUE
-      # )
-      
       return(NULL)
     }
   )
@@ -941,7 +996,10 @@ unlink(
 for (i in 1:length(LU_models)) {
   predict_tiles(
     model = LU_models[[i]]$model,
-    target = paste0("LU1700_", LU_1700_summary$LU_txt_nospace[i]),
+    target = paste0(
+      "LU1700_", str_pad(i, width = 2, pad = "0"),  "_", 
+      LU_1700_summary$LU_txt_nospace[i]
+      ),
     subdir_tiles = subdir_tiles,
     dir_pred_all = dir_pred_all,
     dir_pred_tiles = dir_pred_tiles,
