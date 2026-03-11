@@ -909,19 +909,19 @@ predict_tiles <- function(
   )
 }
 
-# Predict peat from Jupiter
-
-predict_tiles(
-    model = model_Jupiter_peat$model,
-    target = "Jupiter_ispeat",
-    subdir_tiles = subdir_tiles,
-    dir_pred_all = dir_pred_all,
-    dir_pred_tiles = dir_pred_tiles,
-    cores = numCores,
-    digits = 3,
-    temp = tmpfolder
-)
-
+# # Predict peat from Jupiter
+# 
+# predict_tiles(
+#     model = model_Jupiter_peat$model,
+#     target = "Jupiter_ispeat",
+#     subdir_tiles = subdir_tiles,
+#     dir_pred_all = dir_pred_all,
+#     dir_pred_tiles = dir_pred_tiles,
+#     cores = numCores,
+#     digits = 3,
+#     temp = tmpfolder
+# )
+# 
 # unlink(
 #   list.files(tmpfolder, full.names = TRUE),
 #   recursive = TRUE,
@@ -936,7 +936,7 @@ predict_tiles(
   subdir_tiles = subdir_tiles,
   dir_pred_all = dir_pred_all,
   dir_pred_tiles = dir_pred_tiles,
-  cores = numCores,
+  cores = 10,  # Lower number of cores, due to the large size of the model
   digits = 3,
   temp = tmpfolder
 )
@@ -963,11 +963,11 @@ predict_tiles(
   temp = tmpfolder
 )
 
-# unlink(
-#   list.files(tmpfolder, full.names = TRUE),
-#   recursive = TRUE,
-#   force = TRUE
-# )
+unlink(
+  list.files(tmpfolder, full.names = TRUE),
+  recursive = TRUE,
+  force = TRUE
+)
 
 # Predict relative sampling density  from OchreDB
 
@@ -993,7 +993,12 @@ unlink(
 
 # Predict LU
 
-for (i in 1:length(LU_models)) {
+n_cores_LU <- rep(20, length(LU_models))
+
+n_cores_LU[6] <- 10
+
+# for (i in 1:length(LU_models)) {
+for (i in 3:length(LU_models)) {
   predict_tiles(
     model = LU_models[[i]]$model,
     target = paste0(
@@ -1003,7 +1008,7 @@ for (i in 1:length(LU_models)) {
     subdir_tiles = subdir_tiles,
     dir_pred_all = dir_pred_all,
     dir_pred_tiles = dir_pred_tiles,
-    cores = numCores,
+    cores = n_cores_LU[i],
     digits = 3,
     temp = tmpfolder
   )
