@@ -1022,4 +1022,139 @@ unlink(
   force = TRUE
 )
 
+# Normalize probabilities
+
+dirs_tiles_lu_raw <- dir_pred_tiles %>%
+  list.dirs() %>%
+  str_subset(pattern = "LU1700", negate = FALSE) %>%
+  paste0(., "/")
+
+dir_tiles_lu_proc <- dir_pred_all %>%
+  paste0()
+
+lu_names_out <- dirs_tiles_lu_raw %>%
+  basename()
+
+lu_names_out_extra <- lu_names_out %>%
+  c("LU1700_class", "LU1700_uncertainty")
+
+dir_tiles_lu_proc <- dir_pred_all %>%
+  paste0(., "/tiles_lu_proc/") %T>%
+  dir.create()
+
+subdirs_tiles_lu_proc <- dir_tiles_lu_proc %>%
+  paste0(., lu_names_out_extra, "/") %T>%
+  sapply(function(x) {dir.create(x)})
+
+files_tiles_lu_raw <- sapply(
+  dirs_tiles_lu_raw,
+  function (x) {
+    out <- list.files(
+      x, 
+      pattern = "\\.tif$"
+      ,
+      full.names = TRUE
+      )
+    return(out)
+  }
+  ) %>%
+  cbind() %>%
+  as.matrix() %>%
+  set_colnames(NULL)
+
+
+for (i in 1:nrow(files_tiles_lu_raw)) {
+  
+  i_pad <- str_pad(i, width = 3, pad = "0")
+  
+  rast_i <-  files_tiles_lu_raw %>%
+    magrittr::extract(i, ) %>%
+    rast()
+  
+  names(rast_i) <- lu_names_out
+  
+  # autoplot(rast_i) + 
+  #   facet_wrap(~lyr, nrow = 3) +
+  #   scale_x_continuous(expand = c(0, 0)) +
+  #   scale_y_continuous(expand = c(0, 0))
+  
+  sum_i <- sum(rast_i)
+  
+  # plot(sum_i)
+  
+  rast_i_norm <- rast_i / sum_i
+  
+  # autoplot(rast_i_norm) + 
+  #   facet_wrap(~lyr, nrow = 3) +
+  #   scale_x_continuous(expand = c(0, 0)) +
+  #   scale_y_continuous(expand = c(0, 0))
+  
+  minsum <- global(sum_i, "min", na.rm = TRUE) %>%
+    unlist() %>%
+    unname()
+  minsum
+  
+  if (minsum == 0) {
+    rast_i_norm[sum_i == 0] <- 1/length(dirs_tiles_lu_raw)
+  }
+  
+  for (j in 1:nlyr(rast_i_norm)) {
+    math(
+      rast_i_norm[[j]],
+      "round",
+      digits = 3,
+      filename = paste0(
+        subdirs_tiles_lu_proc[j], lu_names_out[j], "_", i_pad, ".tif"),
+      overwrite = TRUE,
+      gdal = "TILED=YES",
+      names = lu_names_out[j]
+    )
+  }
+  
+  which.max(rast_i_norm) %>%
+    writeRaster(
+      filename = paste0(
+        subdirs_tiles_lu_proc[11], lu_names_out_extra[11], "_", i_pad, ".tif"),
+      overwrite = TRUE,
+      gdal = "TILED=YES",
+      names = lu_names_out_extra[11],
+      datatype = "INT2U"
+    )
+  
+  uncertainty_i <- max(rast_i_norm)*(-1) + 1
+  
+  math(
+    uncertainty_i,
+    "round",
+    digits = 3,
+    filename = paste0(
+      subdirs_tiles_lu_proc[12], lu_names_out_extra[12], "_", i_pad, ".tif"),
+    overwrite = TRUE,
+    gdal = "TILED=YES",
+    names = lu_names_out_extra[12]
+  )
+}
+
+dtyps_out <- rep("FLT4S", length(subdirs_tiles_lu_proc))
+dtyps_out[11] <- "INT2U"
+
+
+for (j in 1:length(subdirs_tiles_lu_proc)) {
+  subdirs_tiles_lu_proc %>%
+    magrittr::extract(j) %>%
+    list.files(full.names = TRUE) %>%
+    sprc() %>%
+    merge(
+      filename = paste0(
+        dir_pred_all, lu_names_out_extra[j], ".tif"),
+      overwrite = TRUE,
+      gdal = "TILED=YES",
+      names = lu_names_out_extra[j],
+      datatype = dtyps_out[j]
+    )
+}
+
+
+
+
 # END
