@@ -14,7 +14,6 @@
 # Model for relative sampling density for Jupiter pts
 # Model for each 1700s land use class
 
-
 # Predictions
 # Use tiles
 # Drop unused covariates
