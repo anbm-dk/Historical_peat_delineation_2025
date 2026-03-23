@@ -27,6 +27,10 @@ cov_files <- dir_cov %>%
     full.names = TRUE
   )
 
+# Load observations
+
+source("load_obs.R")
+
 # Load peat models
 
 model_Jupiter_peat <- readRDS(
@@ -139,6 +143,8 @@ varImp(model_Jupiter_peat$model)
 
 varImp(model_Jupiter_presence$model)
 
+rownames(varImp(model_Jupiter_presence$model)$importance)
+
 varImp(model_ochre_peat$model)
 
 varImp(model_ochre_presence$model)
@@ -217,8 +223,98 @@ sapply(
   bind_rows() %>%
   as.data.frame()
 
+# Summarise locations
 
+table(Jupiter_data_peat_all$is_peat)
+table(Jupiter_data_peat_train$is_peat)
+table(Jupiter_data_peat_test$is_peat)
 
+table(Jupiter_data_presence_train$sampled)
+table(Jupiter_data_presence_test$sampled)
 
+table(ochre_data_peat_all$is_peat)
+table(ochre_data_peat_train$is_peat)
+table(ochre_data_peat_test$is_peat)
+
+table(ochre_data_presence_train$sampled)
+table(ochre_data_presence_test$sampled)
+
+# Accuracy for the independent datasets
+
+# Jupiter - peat
+
+pred_test_Jupiter_peat <- predict(
+  model_Jupiter_peat$model,
+  newdata = Jupiter_data_peat_test,
+  type = "prob"
+) %>%
+  mutate(
+    obs = Jupiter_data_peat_test$is_peat,
+    pred = predict(
+      model_Jupiter_peat$model,
+      newdata = Jupiter_data_peat_test
+    )
+  )
+
+pred_test_Jupiter_peat
+
+twoClassSummary(pred_test_Jupiter_peat, lev = c("No", "Yes"))
+
+# Jupiter RSD
+
+pred_test_Jupiter_presence <- predict(
+  model_Jupiter_presence$model,
+  newdata = Jupiter_data_presence_test,
+  type = "prob"
+) %>%
+  mutate(
+    obs = Jupiter_data_presence_test$sampled,
+    pred = predict(
+      model_Jupiter_presence$model,
+      newdata = Jupiter_data_presence_test
+    )
+  )
+
+pred_test_Jupiter_presence
+
+twoClassSummary(pred_test_Jupiter_presence, lev = c("No", "Yes"))
+
+# ochre - peat
+
+pred_test_ochre_peat <- predict(
+  model_ochre_peat$model,
+  newdata = ochre_data_peat_test,
+  type = "prob"
+) %>%
+  mutate(
+    obs = ochre_data_peat_test$is_peat,
+    pred = predict(
+      model_ochre_peat$model,
+      newdata = ochre_data_peat_test
+    )
+  )
+
+pred_test_ochre_peat
+
+twoClassSummary(pred_test_ochre_peat, lev = c("No", "Yes"))
+
+# ochre RSD
+
+pred_test_ochre_presence <- predict(
+  model_ochre_presence$model,
+  newdata = ochre_data_presence_test,
+  type = "prob"
+) %>%
+  mutate(
+    obs = ochre_data_presence_test$sampled,
+    pred = predict(
+      model_ochre_presence$model,
+      newdata = ochre_data_presence_test
+    )
+  )
+
+pred_test_ochre_presence
+
+twoClassSummary(pred_test_ochre_presence, lev = c("No", "Yes"))
 
 # END
