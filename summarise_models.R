@@ -496,4 +496,8 @@ LU_test_class_unc %>%
     n = n()
     )
 
+# Summarise LU observations
+
+table(LU1700_data_all$lu18thcent)
+
 # END
