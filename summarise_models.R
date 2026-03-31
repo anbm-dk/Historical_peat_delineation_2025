@@ -500,4 +500,22 @@ LU_test_class_unc %>%
 
 table(LU1700_data_all$lu18thcent)
 
+# Number of covariates for land use models
+
+colnames(cov_extr_LU) %>%
+  str_subset(pattern = "gw_", negate = TRUE) %>%
+  str_subset(pattern = "tile_dir", negate = TRUE) %>%
+  str_subset(pattern = "point", negate = TRUE) %>%
+  str_subset(pattern = "s1_2020", negate = TRUE) %>%
+  str_subset(pattern = "cost_dist", negate = TRUE) %>%
+  length()
+
+colnames(cov_extr_LU) %>%
+  str_subset(pattern = "gw_", negate = TRUE) %>%
+  str_subset(pattern = "tile_dir", negate = TRUE) %>%
+  str_subset(pattern = "point", negate = TRUE) %>%
+  str_subset(pattern = "s1_2020", negate = TRUE) %>%
+  str_subset(pattern = "cost_dist", negate = TRUE) %>%
+  as.data.frame()
+
 # END
